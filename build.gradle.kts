@@ -32,6 +32,9 @@ dependencies {
     implementation("com.codeborne:selenide:7.17.0")
     testImplementation(platform("org.junit:junit-bom:6.0.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    // AssertJ — «текучие» (fluent) проверки с читаемыми сообщениями об ошибках.
+    // Примеры использования лежат в тестах AssertJ_*Test.
+    testImplementation("org.assertj:assertj-core:3.27.7")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -273,6 +276,14 @@ tasks.register("runAllTests") {
 // ./gradlew nonSlowTest           — всё, кроме slow и ui    ("!slow & !ui")
 // ./gradlew smokeAndFastTest      — и smoke, и fast         ("smoke & fast")
 // ./gradlew smokeOrSlowButNotUiTest — (smoke | slow) и не ui ("(smoke | slow) & !ui")
+//
+// Примеры AssertJ-проверок (текучие ассерты):
+// ./gradlew test --tests "ru.stepup.AssertJ_StringAssertionsTest"
+// ./gradlew test --tests "ru.stepup.AssertJ_NumericAssertionsTest"
+// ./gradlew test --tests "ru.stepup.AssertJ_CollectionAssertionsTest"
+// ./gradlew test --tests "ru.stepup.AssertJ_ExceptionAssertionsTest"
+// ./gradlew test --tests "ru.stepup.AssertJ_ObjectAssertionsTest"
+// ./gradlew test --tests "ru.stepup.AssertJ_*"          // все сразу
 //
 // Фильтры можно задавать прямо из командной строки, не трогая build-файл:
 //   ./gradlew test --tests "ru.stepup.CalculatorTest"
