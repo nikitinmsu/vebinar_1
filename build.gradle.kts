@@ -57,6 +57,8 @@ dependencies {
 //    slowTest         — отбор по JUnit-тегу @Tag("slow")  +  больше памяти (-Xmx2g)
 //    smokeTest        — отбор по тегу @Tag("smoke"), failFast
 //    uiTest           — UI-тесты на Selenide, отбор по @Tag("ui")
+//    smokeOrSlowTest / nonSlowTest / smokeAndFastTest / smokeOrSlowButNotUiTest
+//                     — демо теговых ВЫРАЖЕНИЙ:  "|" (или), "&" (и), "!" (кроме)
 //    runAllTests      — запустить все группы одним заходом
 // =====================================================================
 
@@ -169,7 +171,77 @@ val uiTest by tasks.register<Test>("uiTest") {
     // jvmArgs("-Dwebdriver.chrome.driver=/usr/local/bin/chromedriver")
 }
 
-// ---------- 6. Подключение групп к стандартной сборке ----------
+// ---------- 6. JUnit-теговые ВЫРАЖЕНИЯ: операторы ! & | ----------
+//
+//  JUnit Platform умеет отбирать тесты не только по одному тегу,
+//  а по целому ВЫРАЖЕНИЮ:
+//    "smoke"                  — только тег smoke
+//    "smoke | slow"           — ЛИБО smoke, ЛИБО slow   (объединение)
+//    "smoke & fast"           — И smoke, И fast одновременно (пересечение)
+//    "!slow"                  — всё, КРОМЕ slow (отрицание)
+//    "(smoke | slow) & !ui"   — скобки: (smoke или slow), но не ui
+//
+//  ВАЖНО: операторы — это функция JUnit Platform, поэтому они работают
+//  ТОЛЬКО внутри useJUnitPlatform { includeTags("...") }. В Gradle-блоке
+//  filter { } операторов НЕТ: там лишь includeTestsMatching("по имени").
+//
+//  Задачи ниже — чисто демонстрационные, в check/build они не входят.
+
+// Пример 1: объединение — тег smoke ИЛИ slow
+val smokeOrSlowTest by tasks.register<Test>("smokeOrSlowTest") {
+    group = "verification"
+    description = "Runs tests tagged 'smoke' OR 'slow' (expression: 'smoke | slow')"
+
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+
+    useJUnitPlatform {
+        includeTags("smoke | slow")
+    }
+}
+
+// Пример 2: отрицание — ВСЕ тесты, кроме slow и ui
+val nonSlowTest by tasks.register<Test>("nonSlowTest") {
+    group = "verification"
+    description = "Runs everything EXCEPT 'slow' and 'ui' (expression: '!slow & !ui')"
+
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+
+    useJUnitPlatform {
+        includeTags("!slow & !ui")
+    }
+}
+
+// Пример 3: пересечение — И smoke, И fast одновременно.
+// Наглядно работает потому, что класс SmokeTest помечен обоими тегами:
+//   @Tag("smoke") @Tag("fast") class SmokeTest
+val smokeAndFastTest by tasks.register<Test>("smokeAndFastTest") {
+    group = "verification"
+    description = "Runs tests tagged BOTH 'smoke' AND 'fast' (expression: 'smoke & fast')"
+
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+
+    useJUnitPlatform {
+        includeTags("smoke & fast")
+    }
+}
+
+// Пример 4: комбинация со скобками — (smoke ИЛИ slow), но НЕ ui
+val smokeOrSlowButNotUiTest by tasks.register<Test>("smokeOrSlowButNotUiTest") {
+    group = "verification"
+    description = "Runs (smoke OR slow) but NOT ui (expression: '(smoke | slow) & !ui')"
+
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+
+    useJUnitPlatform {
+        includeTags("(smoke | slow) & !ui")
+    }
+}
+
+// ---------- 7. Подключение групп к стандартной сборке ----------
 // Задача `check` запускается внутри `build`. Добавив свои тестовые задачи
 // в её зависимости, мы «вплетаем» их в стандартный процесс сборки:
 //   ./gradlew build  ==  compile + test + integrationTest + slowTest + smokeTest
@@ -180,7 +252,7 @@ tasks.named("check") {
 // UI-тесты в check сознательно НЕ добавляем: им нужен браузер и сеть.
 // Запускаем их отдельной командой:  ./gradlew uiTest
 
-// ---------- 7. Запустить все группы одним заходом ----------
+// ---------- 8. Запустить все группы одним заходом ----------
 tasks.register("runAllTests") {
     group = "verification"
     description = "Runs all test groups: unit, integration, slow, smoke"
@@ -195,6 +267,12 @@ tasks.register("runAllTests") {
 // ./gradlew runAllTests           — все группы разом
 // ./gradlew check                 — всё, что привязано к check (включая наши группы)
 // ./gradlew build                 — check + упаковка в jar
+//
+// Демонстрация теговых выражений:
+// ./gradlew smokeOrSlowTest       — тег smoke ИЛИ slow      ("smoke | slow")
+// ./gradlew nonSlowTest           — всё, кроме slow и ui    ("!slow & !ui")
+// ./gradlew smokeAndFastTest      — и smoke, и fast         ("smoke & fast")
+// ./gradlew smokeOrSlowButNotUiTest — (smoke | slow) и не ui ("(smoke | slow) & !ui")
 //
 // Фильтры можно задавать прямо из командной строки, не трогая build-файл:
 //   ./gradlew test --tests "ru.stepup.CalculatorTest"
