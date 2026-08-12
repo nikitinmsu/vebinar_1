@@ -24,6 +24,7 @@ class IntegrationCalculatorTest {
     private final Calculator calculator = new Calculator();
 
     @Test
+    @Tag("test_build_report")
     @DisplayName("Report is built correctly from several components")
     void testBuildReport() {
         // «Интеграция»: одновременно используем Calculator, StringUtils и User

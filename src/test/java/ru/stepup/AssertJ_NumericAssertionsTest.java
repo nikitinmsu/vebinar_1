@@ -93,4 +93,31 @@ class AssertJ_NumericAssertionsTest {
         assertThat(new java.math.BigDecimal("0.10"))
                 .isEqualByComparingTo(new java.math.BigDecimal("0.1"));
     }
+
+    @Test
+    @DisplayName("Предикаты: matches — кастомное условие для чисел")
+    void predicates() {
+        // matches(Predicate) — «matches для чисел»: проверка по произвольному условию.
+        // В отличие от строк, здесь нет regex — передаётся функция-условие.
+
+        // Диапазон «вручную»: 7 лежит строго между 0 и 10.
+        assertThat(7).matches(n -> n > 0 && n < 10);
+
+        // Составное условие: положительное И чётное.
+        assertThat(6).matches(n -> n > 0 && n % 2 == 0);
+
+        // Негативная проверка: значение НЕ удовлетворяет условию.
+        assertThat(11).doesNotMatch(n -> n < 10);
+
+        // Предикат можно вынести в переменную и переиспользовать.
+        java.util.function.Predicate<Integer> isBetweenOneAndTen = n -> n >= 1 && n <= 10;
+        assertThat(5).matches(isBetweenOneAndTen);
+        assertThat(15).doesNotMatch(isBetweenOneAndTen);
+
+        // satisfies — то же самое, но внутри можно использовать другие ассерты.
+        assertThat(9).satisfies(n -> {
+            assertThat(n).isPositive();
+            assertThat(n).isOdd();
+        });
+    }
 }

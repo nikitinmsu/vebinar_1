@@ -56,7 +56,7 @@ dependencies {
 //
 //  Какие задачи создадим и КАК они отбирают тесты:
 //    test             — юнит-тесты (стандартная задача, уже была)
-//    integrationTest  — отбор по имени класса:  include("**/Integration*.class")
+//    integrationTest  — отбор по JUnit-тегу @Tag("integration")
 //    slowTest         — отбор по JUnit-тегу @Tag("slow")  +  больше памяти (-Xmx2g)
 //    smokeTest        — отбор по тегу @Tag("smoke"), failFast
 //    uiTest           — UI-тесты на Selenide, отбор по @Tag("ui")
@@ -68,33 +68,39 @@ dependencies {
 // ---------- 1. Юнит-тесты (стандартная задача test) ----------
 tasks.test {
     useJUnitPlatform {
-        // Юнит-тесты должны быть быстрыми, поэтому остальные группы «отдаём»
-        // их собственным задачам. Исключаем тяжёлые, smoke и UI-тесты
-        // по их JUnit-тегам прямо на уровне JUnit Platform.
-        excludeTags("slow", "smoke", "ui")
+        // Фильтрация по тегу прямо из командной строки:
+        //   ./gradlew test -Ptags=integration
+        //   ./gradlew test -Ptags="smoke | slow"
+        // Если тег указан — запускаем только его (в т.ч. выражение),
+        // иначе — обычные юнит-тесты без тяжёлых групп.
+        val tags = providers.gradleProperty("tags").orNull
+        if (tags != null) {
+            includeTags(tags)
+        } else {
+            // Юнит-тесты должны быть быстрыми, поэтому остальные группы «отдаём»
+            // их собственным задачам. Исключаем тяжёлые, smoke, ui и integration
+            // по их JUnit-тегам прямо на уровне JUnit Platform.
+            excludeTags("slow", "smoke", "ui", "integration")
+        }
     }
-
-    // А это — исключение по имени класса (интеграционные тесты).
-    // Работает на уровне Gradle, независимо от JUnit.
-    exclude("**/Integration*.class")
 }
 
 // ---------- 2. Интеграционные тесты: отбор по имени класса ----------
 val integrationTest by tasks.register<Test>("integrationTest") {
     // group и description — «метаданные» задачи, видны в `./gradlew tasks`
     group = "verification"
-    description = "Runs integration tests (classes matching **/Integration*.class)"
-
-    useJUnitPlatform()
+    description = "Runs integration tests (JUnit tag 'integration')"
 
     // НОВОЙ Test-задаче обязательно указать, где брать классы и classpath.
     // (у стандартной задачи test они задаются автоматически)
     testClassesDirs = sourceSets.test.get().output.classesDirs
     classpath = sourceSets.test.get().runtimeClasspath
 
-    // Фильтр по имени класса (Ant-паттерн). Запустятся только классы, чей
-    // путь к .class совпадает с паттерном, например ru/stepup/IntegrationCalculatorTest.class
-    include("**/Integration*.class")
+    // Отбор по JUnit-тегу @Tag("integration") — не по имени класса.
+    // Делается на уровне JUnit Platform через useJUnitPlatform { includeTags(...) }
+    useJUnitPlatform {
+        includeTags("integration")
+    }
 
     // Прогонять test-классы в нескольких JVM параллельно
     maxParallelForks = 4
@@ -265,6 +271,8 @@ tasks.register("runAllTests") {
 // ---------- Полезные команды ----------
 // ./gradlew test                  — только юнит-тесты
 // ./gradlew integrationTest       — только интеграционные
+// ./gradlew test -Ptags=integration   — фильтр по тегу integration (из командной строки)
+// ./gradlew test -Ptags="smoke | slow"  — теговое выражение
 // ./gradlew slowTest              — тяжёлые (с -Xmx2g)
 // ./gradlew smokeTest             — быстрые проверки
 // ./gradlew runAllTests           — все группы разом

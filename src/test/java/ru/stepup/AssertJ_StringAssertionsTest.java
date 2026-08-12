@@ -134,7 +134,7 @@ class AssertJ_StringAssertionsTest {
         // Удобно, когда одно значение проверяется в разных контекстах.
         assertThat(TEXT)
                 .as("Строка %s должна начинаться с приветствия", TEXT)
-                .startsWith("Hello");
+                .startsWith("Небо");
 
         // Как выглядела бы ошибка БЕЗ as(...):
         //   java.lang.AssertionError:
