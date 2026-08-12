@@ -35,6 +35,18 @@ dependencies {
     // AssertJ — «текучие» (fluent) проверки с читаемыми сообщениями об ошибках.
     // Примеры использования лежат в тестах AssertJ_*Test.
     testImplementation("org.assertj:assertj-core:3.27.7")
+    // =====================================================================
+    //  REST API-тестирование (пакет ru.stepup.api)
+    // =====================================================================
+    // RestAssured — DSL для тестирования REST API: позволяет описывать HTTP-запрос
+    // (метод, заголовки, тело, авторизацию) и проверки ответа в стиле «given/when/then».
+    // Документация: https://rest-assured.io
+    testImplementation("io.rest-assured:rest-assured:5.5.2")
+    // Jackson — сериализация/десериализация JSON в Java-объекты (DTO).
+    // RestAssured сам подхватывает Jackson из classpath для методов response.as(Class) /
+    // jsonPath().getList(...). ВАЖНО: должна быть объявлена как testImplementation,
+    // иначе Jackson не увидит наш package (иерархия загрузчиков классов Gradle).
+    testImplementation("com.fasterxml.jackson.core:jackson-databind:2.19.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -78,9 +90,9 @@ tasks.test {
             includeTags(tags)
         } else {
             // Юнит-тесты должны быть быстрыми, поэтому остальные группы «отдаём»
-            // их собственным задачам. Исключаем тяжёлые, smoke, ui и integration
+            // их собственным задачам. Исключаем тяжёлые, smoke, ui, api и integration
             // по их JUnit-тегам прямо на уровне JUnit Platform.
-            excludeTags("slow", "smoke", "ui", "integration")
+            excludeTags("slow", "smoke", "ui", "api", "integration")
         }
     }
 }
@@ -180,6 +192,58 @@ val uiTest by tasks.register<Test>("uiTest") {
     // jvmArgs("-Dwebdriver.chrome.driver=/usr/local/bin/chromedriver")
 }
 
+// ---------- 5а. REST API-тесты (RestAssured) ----------
+// Тесты на ручки HTTP-сервиса (см. пакет ru.stepup.api) отбираются по тегу @Tag("api").
+// Они требуют ЗАПУЩЕННЫЙ сервер (по умолчанию http://127.0.0.1:8080, см. класс Endpoints).
+val apiTest by tasks.register<Test>("apiTest") {
+    group = "verification"
+    description = "Runs REST API tests with RestAssured (JUnit tag 'api'). Needs a running server!"
+
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+
+    useJUnitPlatform {
+        includeTags("api")
+    }
+
+    // Пробрасываем конфигурацию в тестовую JVM как системные свойства.
+    // Источник значений (по приоритету):
+    //   1) -Dapi.xxx=...  — системное свойство из командной строки (./gradlew apiTest -Dapi.username=...)
+    //   2) -PapiXxx=...   — gradle-свойство из командной строки (./gradlew apiTest -PapiUsername=...)
+    //   3) значение по умолчанию
+    // Тонкость: Gradle НЕ передаёт системные свойства из своей JVM в тестовую
+    // автоматически — поэтому явно читаем их через providers.systemProperty
+    // и кладём в тестовую JVM через systemProperty(...).
+    systemProperty("api.base.uri", providers.systemProperty("api.base.uri")
+        .orElse(providers.gradleProperty("apiBaseUri"))
+        .orElse("http://127.0.0.1")
+        .get())
+    systemProperty("api.port", providers.systemProperty("api.port")
+        .orElse(providers.gradleProperty("apiPort"))
+        .orElse("8080")
+        .get())
+    systemProperty("api.username", providers.systemProperty("api.username")
+        .orElse(providers.gradleProperty("apiUsername"))
+        .orElse("admin")
+        .get())
+    systemProperty("api.password", providers.systemProperty("api.password")
+        .orElse(providers.gradleProperty("apiPassword"))
+        .orElse("secret123")
+        .get())
+
+    // Показываем вывод тестовой JVM в консоли (stdout/stderr).
+    // Без этого Gradle «глотает» логи RestAssured из .log().all() —
+    // они уходят в build/reports, но не видны в терминале.
+    testLogging {
+        showStandardStreams = true
+        events("passed", "failed", "skipped")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+}
+
+// REST API-тестам нужен живой сервер, поэтому в check/build они НЕ входят.
+// Запускаем их отдельной командой:  ./gradlew apiTest
+
 // ---------- 6. JUnit-теговые ВЫРАЖЕНИЯ: операторы ! & | ----------
 //
 //  JUnit Platform умеет отбирать тесты не только по одному тегу,
@@ -271,6 +335,7 @@ tasks.register("runAllTests") {
 // ---------- Полезные команды ----------
 // ./gradlew test                  — только юнит-тесты
 // ./gradlew integrationTest       — только интеграционные
+// ./gradlew apiTest               — REST API-тесты (нужен запущенный сервер)
 // ./gradlew test -Ptags=integration   — фильтр по тегу integration (из командной строки)
 // ./gradlew test -Ptags="smoke | slow"  — теговое выражение
 // ./gradlew slowTest              — тяжёлые (с -Xmx2g)
