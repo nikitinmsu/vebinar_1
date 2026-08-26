@@ -29,6 +29,23 @@ repositories {
 
 // Зависимости: testImplementation — только для тестов
 dependencies {
+    // =====================================================================
+    //  SELENIDE — библиотека для UI-автотестов (пакет ru.stepup.ui)
+    // =====================================================================
+    // Selenide — обёртка над WebDriver: сам скачивает драйвер браузера
+    // (через встроенный WebDriverManager), сам управляет таймаутами и
+    // ожиданиями (умные wait'ы вместо sleep), умеет делать скриншоты
+    // и сохранять HTML при падении теста.
+    //
+    // Основные возможности, которые используем в вебинаре:
+    //   - $("css") / $$("css") / $x("//xpath") — поиск элементов;
+    //   - shouldBe / shouldHave(Condition)     — «умные» ожидания;
+    //   - open("url")                          — открытие страницы;
+    //   - PageObject-паттерн (пакет ru.stepup.ui.pageobject);
+    //   - интеграция с JUnit 5: @BeforeEach/@AfterEach.
+    //
+    // Документация: https://selenide.org
+    // Версию поднять: поменять номер тут и перезапустить ./gradlew build.
     implementation("com.codeborne:selenide:7.17.0")
     testImplementation(platform("org.junit:junit-bom:6.0.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -184,12 +201,54 @@ val uiTest by tasks.register<Test>("uiTest") {
         includeTags("ui")
     }
 
-    // Системные свойства прокидываются в тестовую JVM через systemProperty
-    systemProperty("selenide.browser", "chrome")  // какой браузер использовать
-    systemProperty("selenide.headless", "true")   // работать без окна браузера
+    // =====================================================================
+    //  КОНФИГУРАЦИЯ SELENIDE
+    // =====================================================================
+    // Все настройки Selenide (браузер, headless, baseUrl, таймауты и т.д.)
+    // вынесены в файл src/test/resources/selenide.properties — Selenide
+    // читает его из classpath автоматически.
+    //
+    // Переопределить любую настройку можно системным свойством (оно имеет
+    // приоритет над файлом), например так (см. также задачу apiTest ниже):
+    //   systemProperty("selenide.browser", "firefox")
+    //   systemProperty("selenide.headless", "false")
 
     // Альтернатива — JVM-аргумент для указания драйвера вручную:
     // jvmArgs("-Dwebdriver.chrome.driver=/usr/local/bin/chromedriver")
+
+    // =====================================================================
+    //  РЕСТ-КРЕДЫ ДЛЯ UI-ТЕСТОВ
+    // =====================================================================
+    // UI-тесты тоже работают с сервисом: создают товары через API
+    // (чтобы проверить их на странице), а в @AfterEach удаляют их.
+    // Поэтому в тестовую JVM должны попасть те же настройки API, что
+    // и для задачи apiTest. Значения берутся с тем же приоритетом:
+    //   1) -Dapi.xxx=... (системное свойство командной строки)
+    //   2) -PapiXxx=...  (gradle-свойство командной строки)
+    //   3) значения по умолчанию (127.0.0.1:8080, admin/secret123)
+    systemProperty("api.base.uri", providers.systemProperty("api.base.uri")
+        .orElse(providers.gradleProperty("apiBaseUri"))
+        .orElse("http://127.0.0.1")
+        .get())
+    systemProperty("api.port", providers.systemProperty("api.port")
+        .orElse(providers.gradleProperty("apiPort"))
+        .orElse("8080")
+        .get())
+    systemProperty("api.username", providers.systemProperty("api.username")
+        .orElse(providers.gradleProperty("apiUsername"))
+        .orElse("admin")
+        .get())
+    systemProperty("api.password", providers.systemProperty("api.password")
+        .orElse(providers.gradleProperty("apiPassword"))
+        .orElse("secret123")
+        .get())
+
+    // Показываем вывод тестовой JVM в консоли (stdout/stderr).
+    testLogging {
+        showStandardStreams = true
+        events("passed", "failed", "skipped")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
 }
 
 // ---------- 5а. REST API-тесты (RestAssured) ----------
