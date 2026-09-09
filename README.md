@@ -113,3 +113,120 @@ test/                                Тест-сценарии
   поэтому «пустоту» проверяем по отсутствию позиций `.cart-item`.
 - Кнопка «Удалить» в админке вызывает JS-диалог `confirm()` — его
   подтверждаем через `Selenide.confirm()`.
+
+---
+
+# Вебинар: конфигурирование проекта (варианты «подтягивания» свойств)
+
+Учебный блок о том, как проект получает свои настройки: от ручного чтения
+`java.util.Properties` до типизированных конфигов на `aeonbits.owner`,
+с единой точкой входа и контурами (dev/test/prod). Весь код снабжён
+подробными комментариями и лежит в пакетах `ru.stepup.config.*`.
+
+## План вебинара
+
+### Блок 1. `getResourceAsStream` — читаем properties из classpath
+- Зачем класть настройки в ресурсы (`src/main/resources`): версионирование
+  в git, работа из IDE/jar/CI независимо от текущей папки.
+- Как открыть поток: `ClassLoader.getResourceAsStream("config/....properties")`.
+- Подводные камни: путь **без** ведущего `/`, при отсутствии ресурса метод
+  возвращает `null` (нужна явная проверка).
+- Пример: `ru.stepup.config.manual.ClasspathProperties`.
+
+### Блок 2. `FileInputStream` — читаем внешний файл с диска
+- Когда нужен внешний файл: правки без пересборки, секреты вне git/jar.
+- `new FileInputStream(file)` и `try-with-resources`.
+- Отличие от classpath: файла может не быть → `FileNotFoundException`,
+  путь зависит от рабочей папки запуска.
+- Комбинированный приём: дефолты из classpath + внешний файл, если существует.
+- Пример: `ru.stepup.config.manual.FileProperties`.
+
+### Блок 3. `aeonbits.owner` — типизированные конфиги
+- Идея: интерфейс `extends Config` + файл → owner сам находит значения и
+  конвертирует типы (`int`, `double`, `enum`, `URL`, `File`, списки…).
+- «Витрина» возможностей на одном интерфейсе `OwnerFeatures`:
+  авто-маппинг «метод = ключ», `@Key`, `@DefaultValue`, `@Separator`,
+  массивы и `List`, enum (регистр значим!), свой конвертер через
+  `@ConverterClass` + `Converter<T>`, переменные `${...}` в значениях,
+  параметризация значений `%s` аргументами метода.
+- Изменение на лету: маркеры `Mutable` (setProperty/removeProperty) и
+  `Accessible` (getProperty/propertyNames) — `MutableConfig`.
+- Что в 1.0.12 НЕ «из коробки»: `Map`-методы, `java.time.Duration`
+  (в отдельном артефакте owner-java8-extras) — обсудить на вебинаре.
+
+### Блок 4. Единая точка входа в конфиги
+- Проблема «сырого» подхода: источники и приоритеты разъезжаются по коду.
+- Решение: фасад `ProjectConfig` — все обращения через
+  `ProjectConfig.server()`, `ProjectConfig.auth()`; ленивое создание
+  и кэширование owner-конфигов, `reset()` для тестов.
+- Приоритет выбора контура: `-Dapp.env` → `APP_ENV` → dev по умолчанию.
+
+### Блок 5. Конфиги под разные стенды/контуры (dev/test/prod)
+- Файлы `application.properties` (общие дефолты) +
+  `application-dev|test|prod.properties` (переопределения контура).
+- «Пирог приоритетов» на `@LoadPolicy(LoadType.MERGE)` + `@Sources`:
+  `system:properties` → `system:env` → файл контура → общие дефолты →
+  `@DefaultValue`.
+- Один и тот же код отдаёт разные значения: dev `:8080`, test `:8081`,
+  prod `https://smartshop.example.com:8443`.
+- Безопасность: в git — только заглушки; настоящие секреты приходят из
+  переменных окружения / секретниц CI (`ServerConfig`, `AuthConfig`).
+
+## Как запускать материалы
+
+```bash
+./gradlew runConfigDemo                 # сквозная демонстрация всех блоков
+./gradlew runConfigDemo -Dapp.env=prod  # показать конфиг прод-контура
+
+# Тесты (быстрые юнит-тесты, сервер не нужен):
+./gradlew test --tests "ru.stepup.config.manual.*"     # блоки 1–2
+./gradlew test --tests "ru.stepup.config.owner.*"      # блок 3
+./gradlew test --tests "ru.stepup.config.core.*"       # блоки 4–5
+./gradlew test --tests "ru.stepup.config.*"            # все сразу
+```
+
+## Структура учебного кода
+
+```
+src/main/resources/config/
+   application.properties                  общие дефолты (самый низкий приоритет)
+   application-dev.properties              контур DEV
+   application-test.properties             контур TEST
+   application-prod.properties             контур PROD
+   owner-features.properties               файл для «витрины» OwnerFeatures
+   manual-example.properties               файл для ручных примеров (блоки 1–2)
+
+src/main/java/ru/stepup/config/
+   ConfigDemoMain.java                     сквозная демонстрация (main)
+   manual/ClasspathProperties.java         БЛОК 1: getResourceAsStream
+   manual/FileProperties.java              БЛОК 2: FileInputStream
+   owner/ServerConfig.java                 БЛОК 5: конфиг сервера + приоритеты
+   owner/AuthConfig.java                   БЛОК 5: учётные данные + секреты
+   owner/OwnerFeatures.java                БЛОК 3: «витрина» возможностей owner
+   owner/Endpoint.java, EndpointConverter.java  пример своего конвертера
+   owner/MutableConfig.java                БЛОК 3: Mutable + Accessible
+   core/Profile.java                       перечисление контуров
+   core/ProjectConfig.java                 БЛОК 4: ЕДИНАЯ точка входа
+
+src/test/java/ru/stepup/config/
+   manual/ClasspathPropertiesTest.java     проверка блока 1
+   manual/FilePropertiesTest.java          проверка блока 2
+   owner/OwnerFeaturesTest.java            проверка возможностей owner
+   owner/MutableConfigTest.java            проверка Mutable/Accessible
+   owner/ServerAuthConfigTest.java         проверка приоритетов источников
+   core/ProjectConfigProfilesTest.java     проверка контуров dev/test/prod
+```
+
+## Ключевые принципы (для рассказа на вебинаре)
+
+1. **Секреты — не в git.** В файлах лежат заглушки, реальные пароли задаются
+   снаружи (переменные окружения, секретницы CI) — так они не попадут в
+   артефакт и историю коммитов.
+2. **«Пирог приоритетов».** Одна строка кода, но значение можно переопределить
+   на любом уровне: дефолты < контур < переменная окружения < `-D...`.
+3. **Контур выбирается снаружи** (`-Dapp.env=prod`), код не меняется —
+   это и есть готовность к нескольким стендам.
+4. **Типизация вместо ручного парсинга** — главная ценность owner: меньше
+   кода и ошибок конвертации (`int port()` вместо `Integer.parseInt(...)`).
+5. **Единая точка входа** (`ProjectConfig`) — проще найти, отладить и
+   переопределить любую настройку; нет «самодеятельности» в каждом классе.

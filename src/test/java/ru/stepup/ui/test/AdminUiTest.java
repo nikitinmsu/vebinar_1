@@ -47,7 +47,7 @@ class AdminUiTest extends BaseUiTest {
         // Шаг 2: мы на странице входа — входим под админом.
         LoginPage loginPage = new LoginPage();
         loginPage.checkPageDisplayed();
-        checkUrl("/login");
+        checkUrl("/login2");
 
         AdminPage adminPage = loginPage.loginAs(
                 ru.stepup.api.config.ApiConfig.getUsername(),

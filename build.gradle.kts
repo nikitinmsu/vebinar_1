@@ -47,6 +47,16 @@ dependencies {
     // Документация: https://selenide.org
     // Версию поднять: поменять номер тут и перезапустить ./gradlew build.
     implementation("com.codeborne:selenide:7.17.0")
+    // =====================================================================
+    //  AEONBITS.OWNER — типизированная работа с properties (вебинар «Конфигурирование»)
+    // =====================================================================
+    // owner позволяет «спроецировать» .properties-файл на Java-интерфейс:
+    // вместо ручного Properties.getProperty() + парсинга типов мы объявляем
+    // методы интерфейса (int port(), String host()) и получаем значения
+    // сразу нужного типа. Документация и примеры: https://owner.aeonbits.org
+    // Версия 1.0.12 — последний стабильный релиз из Maven Central.
+    // Все учебные примеры лежат в пакетах ru.stepup.config.*
+    implementation("org.aeonbits.owner:owner:1.0.12")
     testImplementation(platform("org.junit:junit-bom:6.0.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     // AssertJ — «текучие» (fluent) проверки с читаемыми сообщениями об ошибках.
@@ -464,6 +474,20 @@ tasks.register<JavaExec>("runCustom") {
     mainClass = "ru.stepup.Main"
     classpath = sourceSets.main.get().runtimeClasspath
     args("example", "arg")
+}
+
+// Запуск демонстрации конфигурирования (вебинар «Конфигурирование проекта»)
+//   ./gradlew runConfigDemo                      — контур по умолчанию (dev)
+//   ./gradlew runConfigDemo -Dapp.env=prod       — показать прод-контур
+// Примечание: Gradle не пробрасывает -D из своей JVM в дочерний процесс,
+// поэтому явно перекладываем app.env, если он задан в командной строке.
+tasks.register<JavaExec>("runConfigDemo") {
+    group = "application"
+    description = "Runs the configuration webinar demo (ru.stepup.config.ConfigDemoMain)"
+    dependsOn("classes")
+    mainClass = "ru.stepup.config.ConfigDemoMain"
+    classpath = sourceSets.main.get().runtimeClasspath
+    providers.systemProperty("app.env").orNull?.let { systemProperty("app.env", it) }
 }
 
 // Запись информации о сборке в файл
