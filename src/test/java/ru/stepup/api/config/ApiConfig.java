@@ -1,5 +1,6 @@
 package ru.stepup.api.config;
 
+import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.specification.RequestSpecification;
@@ -104,6 +105,22 @@ public final class ApiConfig {
                 .setContentType("application/json")
                 .setAccept("application/json")
                 .setAuth(RestAssured.preemptive().basic(USERNAME, PASSWORD))
+                // =============================================================
+                //  ALLURE: фильтр AllureRestAssured
+                // =============================================================
+                // Одна строка — и КАЖДЫЙ HTTP-запрос/ответ этой спецификации
+                // попадает в Allure-отчёт: метод, URL, заголовки, тело запроса,
+                // статус-код и тело ответа. Так в отчёте видно всю «переписку»
+                // с сервисом, а не только результат проверок.
+                //
+                // Фильтр добавлен сюда (в единую фабрику спецификаций) — значит,
+                // его получат ВСЕ запросы из Page Object'а GoodsApi через
+                // RestApiBuilder. Ничего больше править в тестах не нужно.
+                //
+                // Если захочется НЕ логировать какой-то запрос — можно построить
+                // отдельную спецификацию без фильтра (см. NegativeUiTest, где
+                // запрос «без авторизации» собирается вручную).
+                .addFilter(new AllureRestAssured())
                 .build();
     }
 

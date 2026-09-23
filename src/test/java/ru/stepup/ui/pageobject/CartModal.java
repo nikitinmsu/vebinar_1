@@ -2,6 +2,7 @@ package ru.stepup.ui.pageobject;
 
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.SelenideElement;
+import io.qameta.allure.Step;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -268,6 +269,7 @@ public class CartModal {
      * @param productId id товара
      * @return this
      */
+    @Step("Увеличить количество товара id={productId} в корзине")
     public CartModal increaseQuantity(long productId) {
         int index = indexOfItem(productId);
         $("button[data-action='cart-qty'][data-index='" + index + "'][data-step='1']")
@@ -281,6 +283,7 @@ public class CartModal {
      * @param productId id товара
      * @return this
      */
+    @Step("Уменьшить количество товара id={productId} в корзине")
     public CartModal decreaseQuantity(long productId) {
         int index = indexOfItem(productId);
         $("button[data-action='cart-qty'][data-index='" + index + "'][data-step='-1']")
@@ -294,6 +297,7 @@ public class CartModal {
      * @param productId id товара
      * @return this
      */
+    @Step("Удалить товар id={productId} из корзины")
     public CartModal removeItem(long productId) {
         int index = indexOfItem(productId);
         $("button[data-action='remove'][data-index='" + index + "']")
@@ -348,6 +352,7 @@ public class CartModal {
      *
      * @return this
      */
+    @Step("Оформить заказ")
     public CartModal clickCheckout() {
         makeOrderButton.shouldBe(visible).click();
         return this;

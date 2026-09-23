@@ -1,5 +1,6 @@
 package ru.stepup.ui.pageobject;
 
+import io.qameta.allure.Step;
 import ru.stepup.ui.pageobject.header.LoginPageHeaders;
 
 import static com.codeborne.selenide.Selenide.open;
@@ -55,6 +56,7 @@ public class LoginPage {
      * @param username логин
      * @return this
      */
+    @Step("Ввести логин «{username}»")
     public LoginPage enterUsername(String username) {
         headers.usernameInput().setValue(username);
         return this;
@@ -66,6 +68,7 @@ public class LoginPage {
      * @param password пароль
      * @return this
      */
+    @Step("Ввести пароль")
     public LoginPage enterPassword(String password) {
         headers.passwordInput().setValue(password);
         return this;
@@ -76,6 +79,7 @@ public class LoginPage {
      *
      * @return this
      */
+    @Step("Нажать кнопку «Sign in»")
     public LoginPage clickSignIn() {
         headers.signInButton().click();
         return this;
@@ -98,6 +102,7 @@ public class LoginPage {
      * @param password пароль
      * @return Page Object админки {@link AdminPage}
      */
+    @Step("Авторизоваться под пользователем «{username}» (ожидаем успех)")
     public AdminPage loginAs(String username, String password) {
         enterUsername(username);
         enterPassword(password);
@@ -116,6 +121,7 @@ public class LoginPage {
      * @param password пароль
      * @return this (мы всё ещё на странице входа)
      */
+    @Step("Авторизоваться под пользователем «{username}» (ожидаем отказ)")
     public LoginPage loginExpectingFailure(String username, String password) {
         enterUsername(username);
         enterPassword(password);

@@ -1,6 +1,14 @@
 package ru.stepup.ui.test;
 
 import com.codeborne.selenide.Selenide;
+import io.qameta.allure.AllureId;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Link;
+import io.qameta.allure.Owner;
+import io.qameta.allure.Severity;
+import io.qameta.allure.SeverityLevel;
+import io.qameta.allure.Story;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -28,6 +36,18 @@ import static com.codeborne.selenide.Selenide.$;
  *  (гибридный подход — см. требования вебинара).
  */
 @Tag("ui")
+// =====================================================================
+//  АННОТАЦИИ ALLURE (основные)
+// =====================================================================
+//   @Epic / @Feature / @Story — иерархия отчёта (продукт -> функция -> сценарий);
+//   @Owner                    — кто отвечает за тесты;
+//   @Severity                 — важность теста (задаётся на методе);
+//   @AllureId                 — стабильный id теста;
+//   @Link                     — ссылка на документацию.
+@Epic("UI-тесты SmartShop")
+@Feature("Негативные сценарии")
+@Owner("QA-команда SmartShop")
+@Link(name = "Swagger API", url = "http://127.0.0.1:8080/swagger-ui/index.html")
 class NegativeUiTest extends BaseUiTest {
 
     // =================================================================
@@ -36,6 +56,9 @@ class NegativeUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Неверный пароль: показывается сообщение об ошибке, вход не выполняется")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("UI-301")
+    @Story("Неверные учётные данные")
     void wrongPasswordShowsErrorAndStaysOnLogin() {
         LoginPage loginPage = new LoginPage().openPage();
         loginPage.checkPageDisplayed();
@@ -56,6 +79,9 @@ class NegativeUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Доступ к /admin без авторизации перекидывает на /login")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("UI-302")
+    @Story("Защита админки")
     void adminPageWithoutAuthRedirectsToLogin() {
         // Пытаемся открыть админку напрямую, не авторизуясь.
         Selenide.open("/admin");
@@ -70,6 +96,9 @@ class NegativeUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Количество товара не может стать меньше 1 (кнопка «-»)")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("UI-303")
+    @Story("Ограничения количества")
     void quantityCannotGoBelowOne() {
         // Создаём товар через API и перезагружаем страницу.
         long productId = createProductViaApi(uniqueName("Минимум-Один"), 50.0);
@@ -88,6 +117,9 @@ class NegativeUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("«Оформить заказ» при пустой корзине ничего не делает")
+    @Severity(SeverityLevel.MINOR)
+    @AllureId("UI-304")
+    @Story("Пустая корзина")
     void checkoutWithEmptyCartDoesNothing() {
         MainPage mainPage = new MainPage();
         mainPage.checkPageDisplayed();
@@ -112,6 +144,9 @@ class NegativeUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("API: создание товара с пустым названием отклоняется (400)")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("UI-305")
+    @Story("Валидация API")
     void addProductWithEmptyNameRejected() {
         Response response = goodsApi.addProduct(new ProductRequest("", 10.0));
         assertThat(response.getStatusCode()).as("код ответа").isEqualTo(400);
@@ -119,6 +154,9 @@ class NegativeUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("API: отрицательная цена отклоняется (400) с сообщением")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("UI-306")
+    @Story("Валидация API")
     void addProductWithNegativePriceRejected() {
         Response response = goodsApi.addProduct(new ProductRequest("Негатив-Цена", -5.0));
 
@@ -129,6 +167,9 @@ class NegativeUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("API: удаление несуществующего товара возвращает 404")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("UI-307")
+    @Story("Ошибки API")
     void deleteNonExistentProductReturns404() {
         // Гарантированно несуществующий id.
         long ghostId = 999_999L;
@@ -138,6 +179,9 @@ class NegativeUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("API: добавление товара без авторизации отклоняется (401)")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("UI-308")
+    @Story("Авторизация API")
     void addProductWithoutAuthRejected() {
         // Специально НЕ используем goodsApi (у него Basic Auth) —
         // делаем запрос без авторизации через RestAssured напрямую.

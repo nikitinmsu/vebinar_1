@@ -1,6 +1,7 @@
 package ru.stepup.ui.pageobject;
 
 import com.codeborne.selenide.SelenideElement;
+import io.qameta.allure.Step;
 
 import static com.codeborne.selenide.Condition.visible;
 import static com.codeborne.selenide.Selenide.$;
@@ -151,6 +152,7 @@ public class ProductCard {
      * @param quantity количество товара
      * @return this
      */
+    @Step("Добавить товар id={productId} в корзину в количестве {quantity}")
     public ProductCard addToCart(int quantity) {
         return setQuantity(quantity).clickAddToCart();
     }

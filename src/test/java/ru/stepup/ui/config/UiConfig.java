@@ -1,6 +1,8 @@
 package ru.stepup.ui.config;
 
 import com.codeborne.selenide.Configuration;
+import com.codeborne.selenide.logevents.SelenideLogger;
+import io.qameta.allure.selenide.AllureSelenide;
 
 /**
  * =====================================================================
@@ -50,6 +52,23 @@ public final class UiConfig {
         if (initialized) {
             return; // уже инициализировали
         }
+
+        // =====================================================================
+        //  ALLURE: слушатель AllureSelenide
+        // =====================================================================
+        // SelenideLogger — «шина событий» Selenide: каждый шаг (поиск элемента,
+        // клик, shouldBe/shouldHave, открытие страницы) порождает событие.
+        // Слушатель AllureSelenide перехватывает эти события и пишет их в
+        // Allure-отчёт как подшаги текущего теста, а при падении автоматически
+        // прикладывает скриншот и HTML-дамп страницы.
+        //
+        // Формат добавления: SelenideLogger.addListener(имя, экземпляр).
+        // Имя — произвольный строковый ключ (нужен, чтобы слушателя можно было
+        // найти или удалить через removeListener).
+        //
+        // ВАЖНО: вызываем ДО первых UI-действий (у нас — в @BeforeAll базового
+        // класса BaseUiTest), иначе часть шагов первого теста не попадёт в отчёт.
+        SelenideLogger.addListener("AllureSelenide", new AllureSelenide());
 
         // Обращение к полям Configuration инициирует загрузку
         // selenide.properties (статический блок Configuration).

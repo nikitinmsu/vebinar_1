@@ -1,6 +1,14 @@
 package ru.stepup.ui.test;
 
 import com.codeborne.selenide.Selenide;
+import io.qameta.allure.AllureId;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Link;
+import io.qameta.allure.Owner;
+import io.qameta.allure.Severity;
+import io.qameta.allure.SeverityLevel;
+import io.qameta.allure.Story;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -32,35 +40,47 @@ import static org.assertj.core.api.Assertions.assertThat;
  *  ПРАВИЛО: ПОСЛЕ КАЖДОГО ДЕЙСТВИЯ ПРОВЕРЯЕМ URL И СОСТОЯНИЕ СТРАНИЦЫ.
  */
 @Tag("ui")
+// =====================================================================
+//  АННОТАЦИИ ALLURE (основные)
+// =====================================================================
+//   @Epic / @Feature / @Story — иерархия отчёта (продукт -> функция -> сценарий);
+//   @Owner                    — кто отвечает за тесты;
+//   @Severity                 — важность теста (задаётся на методе);
+//   @AllureId                 — стабильный id теста;
+//   @Link                     — ссылка на документацию (Swagger).
+@Epic("UI-тесты SmartShop")
+@Feature("Администрирование")
+@Owner("QA-команда SmartShop")
+@Link(name = "Swagger API", url = "http://127.0.0.1:8080/swagger-ui/index.html")
 class AdminUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Вход в Админку: главная -> «Администрирование» -> логин -> /admin")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("UI-201")
+    @Story("Вход в админку")
     void loginToAdminThroughUi() {
         MainPage mainPage = new MainPage();
         mainPage.checkPageDisplayed();
         checkUrl("/");
 
         // Шаг 1: клик по «Администрирование».
-        mainPage.clickAdminLink();
-
-        // Шаг 2: мы на странице входа — входим под админом.
-        LoginPage loginPage = new LoginPage();
-        loginPage.checkPageDisplayed();
-        checkUrl("/login2");
-
-        AdminPage adminPage = loginPage.loginAs(
+        AdminPage adminPage = mainPage
+                .clickAdminLink()
+                .checkPageDisplayed()
+                .loginAs(
                 ru.stepup.api.config.ApiConfig.getUsername(),
-                ru.stepup.api.config.ApiConfig.getPassword());
+                ru.stepup.api.config.ApiConfig.getPassword())
+                .checkPageDisplayed();
 
-        // Шаг 3: проверяем, что мы в админке.
-        checkUrl("/admin");
-        adminPage.checkPageDisplayed();
         assertThat(adminPage.headers().adminTitleElement().text()).isEqualTo("SmartShop Admin");
     }
 
     @Test
     @DisplayName("Добавление товара через админку: товар появляется в таблице")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("UI-202")
+    @Story("Добавление товара через админку")
     void addProductViaAdminUiShowsInTable() throws InterruptedException {
         // Входим в админку напрямую (страница сама перекинет на /login,
         // если не авторизованы — но мы авторизуемся через UI).
@@ -97,6 +117,9 @@ class AdminUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("В таблице админки отображаются другие (ранее созданные) товары")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("UI-203")
+    @Story("Содержимое таблицы админки")
     void adminTableShowsExistingProducts() {
         // Готовим товар через API — он должен появиться и в админке.
         long apiProductId = createProductViaApi(uniqueName("Существующий"), 500.0);
@@ -121,6 +144,9 @@ class AdminUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Смена цены в админке отражается на главной странице")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("UI-204")
+    @Story("Редактирование товара")
     void changePriceInAdminReflectsOnMainPage() {
         // Готовим товар через API (быстрее) и смотрим на него в UI.
         String productName = uniqueName("Для-Смены-Цены");
@@ -167,6 +193,9 @@ class AdminUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Удаление товара через админку убирает его из таблицы")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("UI-205")
+    @Story("Удаление товара")
     void deleteProductViaAdminUi() {
         // Создаём товар через API и входим в админку.
         long productId = createProductViaApi(uniqueName("Удалим-Через-UI"), 900.0);
