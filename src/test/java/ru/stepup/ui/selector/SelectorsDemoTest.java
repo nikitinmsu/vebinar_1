@@ -3,6 +3,13 @@ package ru.stepup.ui.selector;
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Link;
+import io.qameta.allure.Owner;
+import io.qameta.allure.Severity;
+import io.qameta.allure.SeverityLevel;
+import io.qameta.allure.Story;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -60,6 +67,16 @@ import static org.assertj.core.api.Assertions.assertThat;
  *  что CSS и XPath находят одни и те же элементы.
  */
 @Tag("ui")
+// =====================================================================
+//  АННОТАЦИИ ALLURE (основные)
+// =====================================================================
+//   @Epic / @Feature / @Story — иерархия отчёта;
+//   @Owner / @Severity / @Link — владелец, важность, ссылка.
+@Epic("UI-тесты SmartShop")
+@Feature("Селекторы CSS и XPath")
+@Owner("QA-команда SmartShop")
+@Link(name = "Swagger API", url = "http://127.0.0.1:8080/swagger-ui/index.html")
+@Severity(SeverityLevel.MINOR)
 class SelectorsDemoTest extends BaseUiTest {
 
     /** id товара, созданного через API специально для демонстрации. */

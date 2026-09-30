@@ -3,6 +3,14 @@ package ru.stepup.ui.test;
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
+import io.qameta.allure.AllureId;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Link;
+import io.qameta.allure.Owner;
+import io.qameta.allure.Severity;
+import io.qameta.allure.SeverityLevel;
+import io.qameta.allure.Story;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -40,6 +48,18 @@ import static com.codeborne.selenide.Selenide.$$;
  *    $$("...").size()  — количество элементов коллекции.
  */
 @Tag("ui")
+// =====================================================================
+//  АННОТАЦИИ ALLURE (основные)
+// =====================================================================
+//   @Epic / @Feature / @Story — иерархия отчёта (продукт -> функция -> сценарий);
+//   @Owner                    — кто отвечает за тесты;
+//   @Severity                 — важность теста (задаётся на методе);
+//   @AllureId                 — стабильный id теста;
+//   @Link                     — ссылка на документацию.
+@Epic("UI-тесты SmartShop")
+@Feature("DOM-проверки")
+@Owner("QA-команда SmartShop")
+@Link(name = "Swagger API", url = "http://127.0.0.1:8080/swagger-ui/index.html")
 class DomUiTest extends BaseUiTest {
 
     // =================================================================
@@ -48,6 +68,9 @@ class DomUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("DOM главной страницы: язык, title, шапка, контейнер товаров")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("UI-401")
+    @Story("Структура главной страницы")
     void mainPageDocumentStructure() {
         MainPage mainPage = new MainPage();
         mainPage.checkPageDisplayed();
@@ -86,6 +109,9 @@ class DomUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("DOM главной страницы: у карточки товара правильная структура и атрибуты")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("UI-402")
+    @Story("Структура карточки товара")
     void productCardDomStructure() {
         // Создаём товар с уникальным именем и фиксированной ценой.
         String name = uniqueName("DOM-Карточка");
@@ -124,6 +150,9 @@ class DomUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("DOM корзины: модалка скрыта, элементы на месте, структура позиции")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("UI-403")
+    @Story("Структура корзины")
     void cartModalDomStructure() {
         long productId = createProductViaApi(uniqueName("DOM-Корзина"), 10.0);
         Selenide.open("/");
@@ -168,6 +197,9 @@ class DomUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("DOM /login: форма, поля и кнопка имеют корректные атрибуты")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("UI-404")
+    @Story("Структура страницы входа")
     void loginPageDomStructure() {
         new LoginPage().openPage();
         checkUrl("/login");
@@ -205,6 +237,9 @@ class DomUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("DOM /admin: форма добавления, таблица с заголовками и структура строки")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("UI-405")
+    @Story("Структура админки")
     void adminPageDomStructure() {
         // Готовим товар через API — чтобы в таблице была строка для проверки.
         long productId = createProductViaApi(uniqueName("DOM-Админ"), 42.0);
@@ -244,6 +279,9 @@ class DomUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Количество карточек в DOM совпадает с количеством товаров в API")
+    @Severity(SeverityLevel.MINOR)
+    @AllureId("UI-406")
+    @Story("Консистентность DOM и данных")
     void domCardsCountMatchesApiGoodsCount() {
         // Создаём пару товаров через API.
         createProductViaApi(uniqueName("DOM-Число-1"), 1.0);

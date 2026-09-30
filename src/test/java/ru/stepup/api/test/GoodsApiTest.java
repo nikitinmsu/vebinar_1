@@ -1,5 +1,14 @@
 package ru.stepup.api.test;
 
+import io.qameta.allure.AllureId;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Link;
+import io.qameta.allure.Owner;
+import io.qameta.allure.Severity;
+import io.qameta.allure.SeverityLevel;
+import io.qameta.allure.Step;
+import io.qameta.allure.Story;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterEach;
@@ -64,6 +73,30 @@ import static ru.stepup.api.config.Endpoints.goodsById;
  *    товары в {@code @AfterEach} — прогон идемпотентен и не «мусорит».
  */
 @Tag("api")
+// =====================================================================
+//  АННОТАЦИИ ALLURE (основные)
+// =====================================================================
+// Allure собирает из этих аннотаций структуру отчёта. Иерархия такая:
+//   @Epic      — крупная часть продукта (самый верхний уровень, «бизнес»);
+//   @Feature   — функциональность внутри Epic;
+//   @Story     — пользовательская история/сценарий (обычно на методе).
+// Эти три уровня Allure выводит в дереве отчёта и даёт по ним фильтры.
+//
+// ДЛЯ ДЕМОНСТРАЦИИ В ОТЧЁТЕ @Epic / @Feature заданы НА КАЖДОМ МЕТОДЕ —
+// по-разному, чтобы в дереве отчёта появилось несколько эпиков и фич:
+//   @Epic("Каталог товаров")             — чтение и список;
+//   @Epic("Администрирование товаров")   — запись (добавить/изменить/удалить);
+//   @Epic("Надёжность API")              — валидация и обработка ошибок.
+// (Методная аннотация ПЕРЕКРЫВАЕТ классовую — так можно раскладывать тесты
+// одного класса по разным веткам отчёта.)
+//
+//   @Owner     — кто владеет этими тестами (команда/человек);
+//   @Link      — ссылка (например, на Swagger/документацию API);
+//   @Severity  — важность конкретного теста (задаётся на методе);
+//   @AllureId  — стабильный уникальный id теста для интеграции с ТМС.
+//   @DisplayName (JUnit) — человекочитаемое имя теста в отчёте.
+@Owner("QA-команда SmartShop")
+@Link(name = "Swagger API", url = "http://127.0.0.1:8080/swagger-ui/index.html")
 class GoodsApiTest {
 
     // Page Object — единственная «точка входа» в API из тестов.
@@ -97,6 +130,7 @@ class GoodsApiTest {
      * @param price цена товара
      * @return id созданного товара
      */
+    @Step("Создать товар «{name}» с ценой {price} и запомнить id")
     private long createProduct(String name, double price) {
         long id = goodsApi.createProductAndReturnId(name, price);
         createdIds.add(id);
@@ -114,6 +148,7 @@ class GoodsApiTest {
      * @param prefix читаемый префикс для понятных сообщений об ошибках
      * @return уникальное имя товара
      */
+    @Step("Сгенерировать уникальное имя с префиксом «{prefix}»")
     private String uniqueName(String prefix) {
         return prefix + "-" + System.currentTimeMillis() + "-" + (int) (Math.random() * 1000);
     }
@@ -152,6 +187,11 @@ class GoodsApiTest {
 
     @Test
     @DisplayName("Создание товара возвращает 200 и id нового товара")
+    @Epic("Администрирование товаров")
+    @Feature("Добавление товара")
+    @Story("Успешное создание возвращает id")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("API-001")
     void addProductReturnsNewProductId() {
         ProductRequest product = new ProductRequest(uniqueName("Телефон"), 59999.99);
 
@@ -171,6 +211,11 @@ class GoodsApiTest {
 
     @Test
     @DisplayName("Создание товара с пустым name -> 400")
+    @Epic("Надёжность API")
+    @Feature("Валидация запросов")
+    @Story("Пустое название отклоняется (400)")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("API-002")
     void addProductWithoutNameIsRejected() {
         // name пустой, а это обязательное поле — сервер должен ответить 400.
         ProductRequest product = new ProductRequest("", 10.0);
@@ -187,6 +232,11 @@ class GoodsApiTest {
 
     @Test
     @DisplayName("Получение созданного товара возвращает его данные")
+    @Epic("Каталог товаров")
+    @Feature("Просмотр товаров")
+    @Story("Получение товара по id")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("API-003")
     void getProductReturnsCreatedProduct() {
         String name = uniqueName("Ноутбук");
         long id = createProduct(name, 89999.99);
@@ -207,6 +257,11 @@ class GoodsApiTest {
 
     @Test
     @DisplayName("Получение удалённого товара -> 404")
+    @Epic("Надёжность API")
+    @Feature("Обработка ошибок")
+    @Story("404 для удалённого товара")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("API-004")
     void getDeletedProductReturns404() {
         long id = createProduct(uniqueName("Удаляемый"), 100.0);
         goodsApi.deleteProduct(id); // удаляем, чтобы получить детерминированный 404
@@ -222,6 +277,11 @@ class GoodsApiTest {
 
     @Test
     @DisplayName("Обновление цены товара через PATCH")
+    @Epic("Администрирование товаров")
+    @Feature("Обновление товара")
+    @Story("Изменение цены через PATCH")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("API-005")
     void updateProductPrice() {
         long id = createProduct(uniqueName("Клавиатура"), 3000.0);
 
@@ -246,6 +306,11 @@ class GoodsApiTest {
 
     @Test
     @DisplayName("Удаление товара, после чего GET возвращает 404")
+    @Epic("Администрирование товаров")
+    @Feature("Удаление товара")
+    @Story("Удаление товара по id")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("API-006")
     void deleteProductRemovesIt() {
         long id = createProduct(uniqueName("Мышь"), 1500.0);
 
@@ -264,6 +329,11 @@ class GoodsApiTest {
 
     @Test
     @DisplayName("Список товаров содержит только что созданный товар")
+    @Epic("Каталог товаров")
+    @Feature("Список товаров")
+    @Story("Новый товар появляется в списке")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("API-007")
     void listContainsCreatedProduct() {
         String name = uniqueName("Монитор");
         createProduct(name, 15000.0);
@@ -279,6 +349,11 @@ class GoodsApiTest {
 
     @Test
     @DisplayName("Пагинация: size ограничивает число элементов на странице")
+    @Epic("Каталог товаров")
+    @Feature("Список товаров")
+    @Story("Пагинация ограничивает размер страницы")
+    @Severity(SeverityLevel.MINOR)
+    @AllureId("API-008")
     void paginationLimitsPageSize() {
         // Гарантируем, что в списке есть хотя бы один товар — чтобы тест
         // не зависел от порядка запуска и состояния БД.

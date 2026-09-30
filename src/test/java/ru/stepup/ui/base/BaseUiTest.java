@@ -2,6 +2,8 @@ package ru.stepup.ui.base;
 
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.WebDriverRunner;
+import io.qameta.allure.Attachment;
+import io.qameta.allure.Step;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -138,6 +140,7 @@ public abstract class BaseUiTest {
      *
      * @param expectedPath ожидаемый путь, например {@code "/admin"}
      */
+    @Step("Проверить, что текущий путь равен «{expectedPath}»")
     protected void checkUrl(String expectedPath) {
         String currentUrl = WebDriverRunner.url();
         String actualPath = pathOf(currentUrl);
@@ -153,6 +156,7 @@ public abstract class BaseUiTest {
      *
      * @param part ожидаемая подстрока пути, например {@code "/login"}
      */
+    @Step("Проверить, что текущий путь содержит «{part}»")
     protected void checkUrlContains(String part) {
         String currentUrl = WebDriverRunner.url();
         String actualPath = pathOf(currentUrl);
@@ -167,6 +171,7 @@ public abstract class BaseUiTest {
      * @param expectedPath  ожидаемый путь
      * @param expectedQuery ожидаемая query-строка БЕЗ знака «?», может быть null
      */
+    @Step("Проверить путь «{expectedPath}» и query «{expectedQuery}»")
     protected void checkUrlWithQuery(String expectedPath, String expectedQuery) {
         String currentUrl = WebDriverRunner.url();
         URI uri = URI.create(currentUrl);
@@ -193,6 +198,7 @@ public abstract class BaseUiTest {
      * @param price цена товара
      * @return id созданного товара
      */
+    @Step("Подготовить данные через API: создать товар «{name}» с ценой {price}")
     protected long createProductViaApi(String name, double price) {
         long id = goodsApi.createProductAndReturnId(name, price);
         createdProductIds.add(id);
@@ -207,8 +213,38 @@ public abstract class BaseUiTest {
      * @param prefix читаемый префикс (например, "Телефон")
      * @return уникальное имя вида {@code Телефон-1786000000000-123}
      */
+    @Step("Сгенерировать уникальное имя с префиксом «{prefix}»")
     protected String uniqueName(String prefix) {
         return prefix + "-" + System.currentTimeMillis() + "-" + (int) (Math.random() * 1000);
+    }
+
+    // =================================================================
+    //  ВЛОЖЕНИЯ ДЛЯ ALLURE (аннотация @Attachment)
+    // =================================================================
+
+    /**
+     * Прикладывает к Allure-отчёту HTML-дамп текущей страницы.
+     * Демонстрация аннотации {@code @Attachment}: метод с этой аннотацией
+     * НЕ выводится как шаг, но его возвращаемое значение попадает в отчёт
+     * как вложение (attachment) текущего теста/шага.
+     *
+     * Вызвать из любого теста: {@code attachPageSource();}
+     *
+     * @return HTML исходного кода текущей страницы
+     */
+    @Attachment(value = "HTML текущей страницы", type = "text/html", fileExtension = ".html")
+    protected String attachPageSource() {
+        return WebDriverRunner.getWebDriver().getPageSource();
+    }
+
+    /**
+     * Прикладывает к отчёту текущий URL страницы (текстовое вложение).
+     *
+     * @return полный URL текущей страницы
+     */
+    @Attachment(value = "Текущий URL страницы", type = "text/plain", fileExtension = ".txt")
+    protected String attachCurrentUrl() {
+        return WebDriverRunner.url();
     }
 
     /**

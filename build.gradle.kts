@@ -4,6 +4,20 @@ import java.time.Duration
 plugins {
     id("java")          // компиляция Java, тесты, jar
     id("application")   // запуск приложения и создание дистрибутивов
+    // =====================================================================
+    //  ALLURE — плагин для построения отчётов о тестах (вебинар «Allure-отчёты»)
+    // =====================================================================
+    // Плагин io.qameta.allure (4.x):
+    //   1) автоматически подключает Java-адаптер Allure (allure-jupiter) и
+    //      настраивает ВСЕ Test-задачи так, чтобы сырые результаты тестов
+    //      писались в build/allure-results;
+    //   2) добавляет задачи allureReport / allureServe для сборки и просмотра
+    //      итогового HTML-отчёта;
+    //   3) добавляет AspectJ-агент в тестовую JVM — без него не работают
+    //      аннотации @Step и @Attachment (см. конфигурацию allure {} ниже).
+    //
+    // Требования: минимальный Gradle 8.11 (у нас 9.3.0 — поддерживается).
+    id("io.qameta.allure") version "4.3.0"
 }
 
 // Информация о проекте
@@ -74,7 +88,78 @@ dependencies {
     // jsonPath().getList(...). ВАЖНО: должна быть объявлена как testImplementation,
     // иначе Jackson не увидит наш package (иерархия загрузчиков классов Gradle).
     testImplementation("com.fasterxml.jackson.core:jackson-databind:2.19.0")
+    // =====================================================================
+    //  ALLURE — отчёты о тестах (вебинар «Allure-отчёты»)
+    // =====================================================================
+    // Сам слушатель JUnit5 (AllureJunit5) подключает плагин io.qameta.allure
+    // автоматически (см. блок allure { adapter { frameworks { jupiter } } } ниже).
+    // Здесь же мы объявляем РАСШИРЕНИЯ Allure под две библиотеки проекта:
+    //
+    //   allure-rest-assured — фильтр AllureRestAssured: кладёт в отчёт каждый
+    //       HTTP-запрос и ответ (метод, URL, заголовки, тело, статус-код).
+    //       Подключается одной строкой в ApiConfig.baseRequestSpec():
+    //       new RequestSpecBuilder().addFilter(new AllureRestAssured())...
+    //
+    //   allure-selenide     — слушатель AllureSelenide: пишет в отчёт шаги
+    //       Selenide ($(...).click(), shouldBe(...) и т.д.) и при падении теста
+    //       автоматически прикладывает скриншот и HTML-дамп страницы.
+    //       Подключается в UiConfig.init():
+    //       SelenideLogger.addListener("AllureSelenide", new AllureSelenide());
+    //
+    //   allure-java-commons — сами аннотации Allure: @Step, @Epic, @Feature,
+    //       @Story, @Severity, @Owner, @Link, @AllureId, @Attachment и др.
+    //       (Они и так приходят транзитивно через allure-jupiter, но объявляем
+    //       явно — чтобы компилятор и IDE видели их «из первых рук».)
+    //
+    // ВАЖНО: версия здесь ОБЯЗАНА совпадать с allureJavaVersion в блоке
+    // allure { adapter { } } ниже (у нас 2.35.5 — единый номер для всего семейства).
+    testImplementation("io.qameta.allure:allure-rest-assured:2.35.5")
+    testImplementation("io.qameta.allure:allure-selenide:2.35.5")
+    testImplementation("io.qameta.allure:allure-java-commons:2.35.5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+// =====================================================================
+//  ALLURE: конфигурация плагина (сборка отчётов)
+// =====================================================================
+allure {
+    // Версия report-рантайма — чем будут собираться HTML-отчёты:
+    //   2.x  — классический Allure 2: скачивает allure-commandline (zip);
+    //   3.x  — новая Allure 3: дополнительно провижинит Node.js.
+    // Для стабильности вебинара берём проверенный годами Allure 2.
+    version.set("2.46.1")
+
+    adapter {
+        // Версия Java-адаптеров Allure (allure-jupiter, allure-rest-assured,
+        // allure-selenide, allure-java-commons). ДОЛЖНА совпадать с версиями
+        // зависимостей в блоке dependencies выше (у нас — 2.35.5).
+        allureJavaVersion.set("2.35.5")
+
+        frameworks {
+            // JUnit Jupiter (поддерживает и JUnit 5, и JUnit 6):
+            // включаем авторегистрацию слушателя AllureJunit5 — результаты
+            // каждого теста автоматически пишутся в build/allure-results.
+            jupiter {
+                autoconfigureListeners.set(true)
+            }
+        }
+    }
+}
+
+// ЗАМЕТКА ДЛЯ ВЕБИНАРА: плагин настраивает ВСЕ Test-задачи (test, uiTest,
+// apiTest, integrationTest, slowTest, smokeTest) на сбор результатов Allure.
+// Ничего дополнительно настраивать в них НЕ нужно.
+
+// =====================================================================
+//  ALLURE: задача allureReport всегда собирается «с чистого листа»
+// =====================================================================
+// allure-commandline (Allure 2) отказывается перезаписывать УЖЕ существующую
+// папку отчёта без флага --clean: ошибка «Target directory ... is already in
+// use». Чтобы команда ./gradlew allureReport работала «из коробки» при любом
+// повторном запуске, включаем опцию clean у задачи allureReport по умолчанию.
+// Эквивалент из командной строки:  ./gradlew allureReport --clean
+tasks.named<io.qameta.allure.gradle.report.tasks.AllureReport>("allureReport") {
+    clean.set(true)
 }
 
 // =====================================================================
@@ -426,6 +511,13 @@ tasks.register("runAllTests") {
 // ./gradlew test --tests "ru.stepup.AssertJ_ExceptionAssertionsTest"
 // ./gradlew test --tests "ru.stepup.AssertJ_ObjectAssertionsTest"
 // ./gradlew test --tests "ru.stepup.AssertJ_*"          // все сразу
+//
+// ALLURE-отчёты (см. вебинар «Allure-отчёты»):
+//   ./gradlew test && ./gradlew allureServe            // юнит-тесты + живой отчёт
+//   ./gradlew uiTest && ./gradlew allureServe          // UI-тесты + отчёт
+//   ./gradlew apiTest && ./gradlew allureReport        // API-тесты + статичный отчёт
+//   ./gradlew allureReport --depends-on-tests          // тесты и отчёт одним заходом
+// Сырые результаты: build/allure-results; готовый отчёт: build/reports/allure-report
 //
 // Фильтры можно задавать прямо из командной строки, не трогая build-файл:
 //   ./gradlew test --tests "ru.stepup.CalculatorTest"

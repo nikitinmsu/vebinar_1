@@ -1,5 +1,13 @@
 package ru.stepup.ui.test;
 
+import io.qameta.allure.AllureId;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Link;
+import io.qameta.allure.Owner;
+import io.qameta.allure.Severity;
+import io.qameta.allure.SeverityLevel;
+import io.qameta.allure.Story;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -29,10 +37,28 @@ import static org.assertj.core.api.Assertions.assertThat;
  *  «сессия» авторизации не протекает из одного теста в другой.
  */
 @Tag("ui")
+// =====================================================================
+//  АННОТАЦИИ ALLURE (основные)
+// =====================================================================
+//   @Epic      — самый верхний уровень отчёта (бизнес-часть продукта);
+//   @Feature   — функциональность внутри Epic (у нас — «Авторизация»);
+//   @Story     — конкретный пользовательский сценарий (на методе);
+//   @Owner     — команда/человек, отвечающий за эти тесты;
+//   @Severity  — важность конкретного теста (на методе);
+//   @AllureId  — стабильный id теста (интеграция с системой управления тестами);
+//   @Link      — ссылка на документацию/задачу (например, на Swagger);
+//   @DisplayName (JUnit) — человекочитаемое имя теста.
+@Epic("UI-тесты SmartShop")
+@Feature("Авторизация")
+@Owner("QA-команда SmartShop")
+@Link(name = "Swagger API", url = "http://127.0.0.1:8080/swagger-ui/index.html")
 class AuthorizationUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Клик на «Администрирование» без авторизации ведёт на /login")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("UI-001")
+    @Story("Неавторизованный пользователь")
     void adminLinkRedirectsUnauthorizedUserToLogin() throws InterruptedException {
         // Дано: открыта главная страница (делает BaseUiTest.@BeforeEach).
         // Проверяем стартовое состояние: URL == "/", страница отобразилась.
@@ -55,6 +81,9 @@ class AuthorizationUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Успешный вход (admin/secret123) открывает админку /admin")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("UI-002")
+    @Story("Успешная авторизация")
     void successfulLoginOpensAdminPage() {
         // Переходим на страницу входа напрямую.
         LoginPage loginPage = new LoginPage().openPage();
@@ -79,6 +108,9 @@ class AuthorizationUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Полный путь: главная -> Администрирование -> логин -> админка")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("UI-003")
+    @Story("Полный путь до админки")
     void fullPathToAdminThroughMainPage() {
         // 1. На главной странице кликаем «Администрирование».
         MainPage mainPage = new MainPage();
@@ -102,6 +134,9 @@ class AuthorizationUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Неверный пароль -> блок ошибки на /login")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("UI-004")
+    @Story("Неверный пароль")
     void wrongPasswordShowsError() {
         // Открываем страницу входа и вводим НЕВЕРНЫЙ пароль.
         LoginPage loginPage = new LoginPage().openPage();

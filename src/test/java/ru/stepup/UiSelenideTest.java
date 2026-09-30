@@ -1,6 +1,12 @@
 package ru.stepup;
 
 import com.codeborne.selenide.SelenideElement;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Owner;
+import io.qameta.allure.Severity;
+import io.qameta.allure.SeverityLevel;
+import io.qameta.allure.Story;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -23,6 +29,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * systemProperty("selenide.headless", "true").
  */
 @Tag("ui")
+// =====================================================================
+//  АННОТАЦИИ ALLURE: минимальный пример «эпик -> фича -> история».
+// =====================================================================
+@Epic("UI-тесты SmartShop")
+@Feature("Дымовые проверки")
+@Story("Доступность внешнего сайта")
+@Owner("QA-команда SmartShop")
+@Severity(SeverityLevel.TRIVIAL)
 class UiSelenideTest {
 
     @Test

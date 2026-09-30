@@ -2,6 +2,7 @@ package ru.stepup.ui.pageobject;
 
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.SelenideElement;
+import io.qameta.allure.Step;
 import ru.stepup.ui.pageobject.header.AdminPageHeaders;
 
 import static com.codeborne.selenide.Condition.exist;
@@ -82,6 +83,7 @@ public class AdminPage {
      *
      * @return this
      */
+    @Step("Открыть страницу администрирования /admin")
     public AdminPage openPage() {
         open("/admin");
         return this;
@@ -135,6 +137,7 @@ public class AdminPage {
      * @param price цена товара
      * @return this
      */
+    @Step("Создать товар «{name}» с ценой {price} через админку")
     public AdminPage addProduct(String name, double price) {
         newProductNameInput.shouldBe(visible).setValue(name);
         newProductPriceInput.shouldBe(visible).setValue(String.valueOf(price));
@@ -153,6 +156,7 @@ public class AdminPage {
      * @param newPrice  новая цена
      * @return this
      */
+    @Step("Изменить цену товара id={productId} на {newPrice} в админке")
     public AdminPage updateProductPrice(long productId, double newPrice) {
         $("#pr-" + productId).setValue(String.valueOf(newPrice));
         $("button[data-action='update'][data-id='" + productId + "']").click();
@@ -206,6 +210,7 @@ public class AdminPage {
      * @param productId id товара
      * @return this
      */
+    @Step("Удалить товар id={productId} через админку")
     public AdminPage deleteProduct(long productId) {
         $("button[data-action='delete'][data-id='" + productId + "']").click();
         // Подтверждаем JS-диалог «Удалить товар из SmartShop?».

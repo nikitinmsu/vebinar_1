@@ -3,6 +3,7 @@ package ru.stepup.ui.pageobject;
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.SelenideElement;
 import com.codeborne.selenide.WebDriverRunner;
+import io.qameta.allure.Step;
 import ru.stepup.ui.pageobject.header.MainPageHeaders;
 
 import static com.codeborne.selenide.Condition.visible;
@@ -64,6 +65,7 @@ public class MainPage {
      *
      * @return this — PageObject возвращает себя для цепочек
      */
+    @Step("Открыть главную страницу магазина")
     public MainPage openPage() {
         open("/");
         return this;
@@ -159,6 +161,7 @@ public class MainPage {
      * @param quantity  количество
      * @return this
      */
+    @Step("Добавить товар id={productId} в корзину (количество: {quantity})")
     public MainPage addProductToCart(long productId, int quantity) {
         productCard(productId).addToCart(quantity);
         return this;
@@ -169,6 +172,7 @@ public class MainPage {
      *
      * @return Page Object корзины {@link CartModal}
      */
+    @Step("Открыть корзину")
     public CartModal openCart() {
         headers.clickCartButton();
         return new CartModal();
@@ -197,9 +201,18 @@ public class MainPage {
      *
      * @return this
      */
-    public MainPage clickAdminLink() {
-        headers.clickAdminLink();
-        return this;
+    @Step("Перейти в «Администрирование»")
+    public LoginPage clickAdminLink() {
+
+        try{
+            headers.clickAdminLink();
+        } catch (Exception e){
+            // тут обрабатываете и идете по пути который нужен
+        }
+
+
+        LoginPage loginPage = new LoginPage();
+        return loginPage;
     }
 
     // =================================================================

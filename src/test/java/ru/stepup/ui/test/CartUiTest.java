@@ -2,6 +2,14 @@ package ru.stepup.ui.test;
 
 import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.Selenide;
+import io.qameta.allure.AllureId;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Link;
+import io.qameta.allure.Owner;
+import io.qameta.allure.Severity;
+import io.qameta.allure.SeverityLevel;
+import io.qameta.allure.Story;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -37,6 +45,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  *  элементов и количество элементов коллекций.
  */
 @Tag("ui")
+// =====================================================================
+//  АННОТАЦИИ ALLURE (основные)
+// =====================================================================
+//   @Epic / @Feature / @Story — иерархия отчёта (продукт -> функция -> сценарий);
+//   @Owner                    — кто отвечает за тесты;
+//   @Severity                 — важность теста (BLOCKER/CRITICAL/NORMAL/MINOR/TRIVIAL);
+//   @AllureId                 — стабильный id теста;
+//   @Link                     — ссылка на документацию.
+@Epic("UI-тесты SmartShop")
+@Feature("Корзина")
+@Owner("QA-команда SmartShop")
+@Link(name = "Swagger API", url = "http://127.0.0.1:8080/swagger-ui/index.html")
 class CartUiTest extends BaseUiTest {
 
     /** Товар №1 (цена с копейками, чтобы проверить честные суммы). */
@@ -64,6 +84,9 @@ class CartUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Счётчик корзины увеличивается после добавления товаров")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("UI-101")
+    @Story("Счётчик корзины")
     void addProductsUpdatesCartCounter() {
         MainPage mainPage = new MainPage();
         mainPage.checkPageDisplayed();
@@ -90,6 +113,9 @@ class CartUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Счётчик учитывает количество товара, а не только позиции")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("UI-102")
+    @Story("Счётчик корзины")
     void cartCounterCountsQuantitiesNotJustLines() {
         MainPage mainPage = new MainPage();
         mainPage.checkPageDisplayed();
@@ -107,6 +133,9 @@ class CartUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Корзина содержит добавленные товары")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("UI-103")
+    @Story("Состав корзины")
     void cartContainsAddedProducts() {
         MainPage mainPage = new MainPage();
         mainPage.checkPageDisplayed();
@@ -141,6 +170,9 @@ class CartUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Увеличение количества пересчитывает сумму по позиции и итог")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("UI-104")
+    @Story("Количество и суммы")
     void increaseQuantityUpdatesSubtotalAndTotal() {
         MainPage mainPage = new MainPage();
         mainPage.checkPageDisplayed();
@@ -175,6 +207,9 @@ class CartUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Удаление позиции убирает её из корзины и меняет итог")
+    @Severity(SeverityLevel.CRITICAL)
+    @AllureId("UI-105")
+    @Story("Удаление из корзины")
     void removeItemUpdatesCart() {
         MainPage mainPage = new MainPage();
         mainPage.checkPageDisplayed();
@@ -211,6 +246,9 @@ class CartUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Итог корзины равен сумме всех позиций")
+    @Severity(SeverityLevel.NORMAL)
+    @AllureId("UI-106")
+    @Story("Суммы")
     void totalEqualsSumOfItems() {
         MainPage mainPage = new MainPage();
         mainPage.checkPageDisplayed();
@@ -241,6 +279,9 @@ class CartUiTest extends BaseUiTest {
 
     @Test
     @DisplayName("Пустая корзина показывает «Пусто» и сумму 0")
+    @Severity(SeverityLevel.MINOR)
+    @AllureId("UI-107")
+    @Story("Пустая корзина")
     void emptyCartShowsEmptyMessage() {
         MainPage mainPage = new MainPage();
         mainPage.checkPageDisplayed();
